@@ -119,7 +119,7 @@ spec:
     spec:
       containers:
       - name: microservicio
-        image: carloscabreravas-dev/microservicio:latest
+        image: carloscabreravas/microservicio:latest
         imagePullPolicy: Always
         ports:
         - name: http
