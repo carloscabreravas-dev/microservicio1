@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     """Configuración de la aplicación"""
     
     # Base de datos
-    DB_USER: str = "usuario"
-    DB_PASSWORD: str = "contraseña"
+    DB_USER: str = "postgres"
+    DB_PASSWORD: str = "postgres"
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
     DB_NAME: str = "microservicio"

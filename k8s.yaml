@@ -32,7 +32,7 @@ metadata:
 type: Opaque
 stringData:
   db-user: "postgres"
-  db-password: "cG9zdGdyZXM="
+  db-password: "postgres"
 
 ---
 # Service para PostgreSQL
