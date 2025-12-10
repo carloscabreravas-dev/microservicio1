@@ -1,0 +1,237 @@
+---
+# ConfigMap para variables de base de datos
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: default
+data:
+  db-port: "5432"
+  db-name: "microservicio"
+  db-host: "postgres"
+
+---
+# ConfigMap para variables de entorno
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: microservicio-config
+  namespace: default
+data:
+  DEBUG: "false"
+  APP_NAME: "Microservicio API"
+  API_VERSION: "1.0.0"
+
+---
+# Secret para credenciales de base de datos
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-credentials
+  namespace: default
+type: Opaque
+stringData:
+  db-user: "postgres"
+  db-password: "cG9zdGdyZXM="
+
+---
+# Service para PostgreSQL
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: default
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+  clusterIP: None
+  selector:
+    app: postgres
+
+---
+# StatefulSet para PostgreSQL
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: default
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "usuario"
+        - name: POSTGRES_PASSWORD
+          value: "contraseña"
+        - name: POSTGRES_DB
+          value: "microservicio"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi
+
+---
+# Deployment para el microservicio
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: microservicio
+  namespace: default
+  labels:
+    app: microservicio
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: microservicio
+  template:
+    metadata:
+      labels:
+        app: microservicio
+    spec:
+      containers:
+      - name: microservicio
+        image: carloscabreravas-dev/microservicio:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: microservicio-config
+              key: DEBUG
+        - name: APP_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: microservicio-config
+              key: APP_NAME
+        - name: API_VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: microservicio-config
+              key: API_VERSION
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: db-user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: db-password
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: db-host
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: db-port
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: db-name
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+
+---
+# Service para el microservicio
+apiVersion: v1
+kind: Service
+metadata:
+  name: microservicio
+  namespace: default
+  labels:
+    app: microservicio
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: microservicio
+
+---
+# HorizontalPodAutoscaler para escalado automático
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: microservicio-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: microservicio
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
