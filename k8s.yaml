@@ -31,8 +31,8 @@ metadata:
   namespace: default
 type: Opaque
 stringData:
-  db-user: "postgres"
-  db-password: "postgres"
+  db-user: "usuario"
+  db-password: "contraseña"
 
 ---
 # Service para PostgreSQL
