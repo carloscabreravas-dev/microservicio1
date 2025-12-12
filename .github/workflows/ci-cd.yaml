@@ -126,10 +126,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Set up OpenShift CLI
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.28.0'
+      - name: Install OpenShift CLI
+        run: |
+          curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz | tar xz
+          sudo mv oc /usr/local/bin/
+          sudo mv kubectl /usr/local/bin/
       
       - name: Login to OpenShift
         run: |
