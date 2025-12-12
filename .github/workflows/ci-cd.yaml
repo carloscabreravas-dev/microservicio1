@@ -117,7 +117,7 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
-  deploy-k8s:
+  deploy-openshift:
     needs: [build-and-push]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -126,19 +126,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Set up kubectl
+      - name: Set up OpenShift CLI
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.28.0'
       
-      - name: Configure kubectl
+      - name: Login to OpenShift
         run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
+          oc login --server=${{ secrets.OPENSHIFT_SERVER }} \
+            --token=${{ secrets.OPENSHIFT_TOKEN }} \
+            --insecure-skip-tls-verify=true
+          oc project ${{ secrets.OPENSHIFT_NAMESPACE }}
       
-      - name: Deploy to Kubernetes
+      - name: Deploy to OpenShift
         run: |
-          kubectl apply -f k8s.yaml
-          kubectl set image deployment/microservicio microservicio=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest --record
-          kubectl rollout status deployment/microservicio -n default --timeout=5m
+          oc apply -f k8s.yaml
+          oc set image deployment/microservicio microservicio=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          oc rollout status deployment/microservicio -n ${{ secrets.OPENSHIFT_NAMESPACE }} --timeout=5m
