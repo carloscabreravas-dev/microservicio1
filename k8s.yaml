@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-config
-  namespace: default
+  namespace: carloscabreravas-dev
 data:
   db-port: "5432"
   db-name: "microservicio"
@@ -16,7 +16,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: microservicio-config
-  namespace: default
+  namespace: carloscabreravas-dev
 data:
   DEBUG: "false"
   APP_NAME: "Microservicio API"
@@ -28,7 +28,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: postgres-credentials
-  namespace: default
+  namespace: carloscabreravas-dev
 type: Opaque
 stringData:
   db-user: "usuario"
@@ -40,7 +40,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: default
+  namespace: carloscabreravas-dev
 spec:
   ports:
     - port: 5432
@@ -55,7 +55,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  namespace: default
+  namespace: carloscabreravas-dev
 spec:
   serviceName: postgres
   replicas: 1
@@ -104,7 +104,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: microservicio
-  namespace: default
+  namespace: carloscabreravas-dev
   labels:
     app: microservicio
 spec:
@@ -195,7 +195,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: microservicio
-  namespace: default
+  namespace: carloscabreravas-dev
   labels:
     app: microservicio
 spec:
@@ -214,7 +214,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: microservicio-hpa
-  namespace: default
+  namespace: carloscabreravas-dev
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
