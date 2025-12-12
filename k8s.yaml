@@ -155,7 +155,7 @@ spec:
         imagePullPolicy: Always
         ports:
         - name: http
-          containerPort: 8000
+          containerPort: 5000
         env:
         - name: DEBUG
           valueFrom:
@@ -200,7 +200,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 8000
+            port: 5000
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
@@ -208,7 +208,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health
-            port: 8000
+            port: 5000
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
@@ -233,8 +233,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - port: 80
-    targetPort: 8000
+  - port: 5000
+    targetPort: 5000
     protocol: TCP
     name: http
   selector:
