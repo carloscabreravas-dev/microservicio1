@@ -1,67 +1,93 @@
-"""
-Microservicio FastAPI para gestionar datos en PostgreSQL
-"""
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import logging
-from config import settings
-from routes import router
-from database import init_db
+from flask import Flask, request, jsonify
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import os
+from dotenv import load_dotenv
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+load_dotenv()
 
-# Crear aplicación FastAPI
-app = FastAPI(
-    title="Microservicio API",
-    description="API para gestionar datos con PostgreSQL",
-    version="1.0.0"
-)
+app = Flask(__name__)
 
-# Configurar CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_PORT = os.getenv('DB_PORT', '5432')
+DB_NAME = os.getenv('DB_NAME', 'microservicio')
+DB_USER = os.getenv('DB_USER', 'usuario')
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'contraseña')
 
-# Incluir rutas
-app.include_router(router)
-
-@app.on_event("startup")
-async def startup_event():
-    """Evento de inicio de la aplicación"""
-    try:
-        init_db()
-        logger.info("Base de datos inicializada correctamente")
-    except Exception as e:
-        logger.error(f"Error al inicializar la base de datos: {e}")
-
-@app.get("/health")
-async def health_check():
-    """Endpoint para verificar el estado del servicio"""
-    return {
-        "status": "healthy",
-        "service": "microservicio-api"
-    }
-
-@app.get("/")
-async def root():
-    """Endpoint raíz"""
-    return {
-        "message": "Bienvenido al Microservicio API",
-        "docs": "/docs",
-        "version": "1.0.0"
-    }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.DEBUG
+def get_db_connection():
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD
     )
+    return conn
+
+def init_db():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS producto (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(255) NOT NULL,
+            descripcion TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    cur.close()
+    conn.close()
+
+@app.route('/health', methods=['GET'])
+def health():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT 1')
+        cur.close()
+        conn.close()
+        return jsonify({'status': 'healthy', 'database': 'connected'}), 200
+    except Exception as e:
+        return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
+
+@app.route('/productos', methods=['GET'])
+def get_productos():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute('SELECT * FROM producto')
+        productos = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(productos), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/productos', methods=['POST'])
+def create_producto():
+    try:
+        data = request.get_json()
+        nombre = data.get('nombre')
+        descripcion = data.get('descripcion')
+        
+        if not nombre or not descripcion:
+            return jsonify({'error': 'nombre y descripcion son requeridos'}), 400
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO producto (nombre, descripcion) VALUES (%s, %s) RETURNING id, nombre, descripcion',
+            (nombre, descripcion)
+        )
+        producto = cur.fetchone()
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return jsonify({'id': producto[0], 'nombre': producto[1], 'descripcion': producto[2]}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    init_db()
+    app.run(host='0.0.0.0', port=5000, debug=True)
