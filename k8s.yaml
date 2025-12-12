@@ -35,29 +35,15 @@ stringData:
   db-password: "contraseña"
 
 ---
-# Service para PostgreSQL
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres
-  namespace: carloscabreravas-dev
-spec:
-  ports:
-    - port: 5432
-      targetPort: 5432
-  clusterIP: None
-  selector:
-    app: postgres
-
----
-# StatefulSet para PostgreSQL
+# Deployment para PostgreSQL
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: postgres
   namespace: carloscabreravas-dev
+  labels:
+    app: postgres
 spec:
-  serviceName: postgres
   replicas: 1
   selector:
     matchLabels:
@@ -67,29 +53,33 @@ spec:
       labels:
         app: postgres
     spec:
-      securityContext:
-        fsGroup: 1000
       containers:
       - name: postgres
         image: postgres:15
         ports:
         - containerPort: 5432
+          name: postgres
         env:
         - name: POSTGRES_USER
-          value: "usuario"
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: db-user
         - name: POSTGRES_PASSWORD
-          value: "contraseña"
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: db-password
         - name: POSTGRES_DB
-          value: "microservicio"
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: db-name
         - name: PGDATA
           value: /var/lib/postgresql/data/pgdata
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
-        - name: tmp
-          mountPath: /tmp
-        - name: run
-          mountPath: /var/run/postgresql
         livenessProbe:
           exec:
             command:
@@ -118,18 +108,27 @@ spec:
             memory: "512Mi"
             cpu: "500m"
       volumes:
-      - name: tmp
+      - name: postgres-storage
         emptyDir: {}
-      - name: run
-        emptyDir: {}
-  volumeClaimTemplates:
-  - metadata:
-      name: postgres-storage
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 5Gi
+
+---
+# Service para PostgreSQL
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: carloscabreravas-dev
+  labels:
+    app: postgres
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app: postgres
 
 ---
 # Deployment para el microservicio
