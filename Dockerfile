@@ -26,7 +26,7 @@ RUN pip install --upgrade pip && \
 COPY . .
 
 # Exponer puerto
-EXPOSE 8000
+EXPOSE 5000
 
 # Comando para iniciar la aplicación
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "app.py"]
