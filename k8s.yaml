@@ -8,7 +8,7 @@ metadata:
 data:
   db-port: "5432"
   db-name: "microservicio"
-  db-host: "pmy-postgres-postgresql.carloscabreravas-dev.svc.cluster.local"
+  db-host: "my-postgres-postgresql.carloscabreravas-dev.svc.cluster.local"
 
 ---
 # ConfigMap para variables de entorno

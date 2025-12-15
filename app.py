@@ -8,11 +8,11 @@ load_dotenv()
 
 app = Flask(__name__)
 
-DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_HOST = os.getenv('DB_HOST', 'my-postgres-postgresql.carloscabreravas-dev.svc.cluster.local')
 DB_PORT = os.getenv('DB_PORT', '5432')
 DB_NAME = os.getenv('DB_NAME', 'microservicio')
-DB_USER = os.getenv('DB_USER', 'usuario')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'contraseña')
+DB_USER = os.getenv('DB_USER', 'postgres')
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'postgres')
 
 def get_db_connection():
     conn = psycopg2.connect(
