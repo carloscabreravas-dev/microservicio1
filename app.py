@@ -8,11 +8,11 @@ load_dotenv()
 
 app = Flask(__name__)
 
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_PORT = os.getenv('DB_PORT', '5432')
-DB_NAME = os.getenv('DB_NAME', 'microservicio')
-DB_USER = os.getenv('DB_USER', 'usuario')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'contraseña')
+DB_HOST = os.getenv('db-host', 'localhost')
+DB_PORT = os.getenv('db-port', '5432')
+DB_NAME = os.getenv('db-name', 'microservicio')
+DB_USER = os.getenv('db-user', 'usuario')
+DB_PASSWORD = os.getenv('db-password', 'contraseña')
 
 def get_db_connection():
     conn = psycopg2.connect(
