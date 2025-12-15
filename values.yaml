@@ -1,94 +1,13 @@
-# Configuración básica de PostgreSQL para OpenShift
-replicaCount: 1
-
-image:
-  repository: postgres
-  tag: "15-alpine"
-  pullPolicy: IfNotPresent
-
-# Credenciales de PostgreSQL (usar Secrets en producción)
-auth:
-  username: postgres
-  password: postgres
-  database: microservicio
-
-# Configuración de servicio
-service:
-  type: ClusterIP
-  port: 5432
-
-# Recursos
-resources:
-  requests:
-    memory: "256Mi"
-    cpu: "250m"
-  limits:
-    memory: "512Mi"
-    cpu: "500m"
-
-# Almacenamiento persistente
-persistence:
-  enabled: true
-  storageClass: ""
-  accessMode: ReadWriteOnce
-  size: 1Gi
-
-# Variables de entorno adicionales
-env:
-  - name: POSTGRES_USER
-    valueFrom:
-      secretKeyRef:
-        name: postgres-secret
-        key: username
-  - name: POSTGRES_PASSWORD
-    valueFrom:
-      secretKeyRef:
-        name: postgres-secret
-        key: password
-  - name: POSTGRES_DB
-    valueFrom:
-      secretKeyRef:
-        name: postgres-secret
-        key: database
-  - name: PGDATA
-    value: /var/lib/postgresql/data/pgdata
-
-# Health checks
-livenessProbe:
-  enabled: true
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  timeoutSeconds: 5
-  exec:
-    command:
-      - /bin/sh
-      - -c
-      - pg_isready -U postgres
-
-readinessProbe:
-  enabled: true
-  initialDelaySeconds: 5
-  periodSeconds: 10
-  timeoutSeconds: 5
-  exec:
-    command:
-      - /bin/sh
-      - -c
-      - pg_isready -U postgres
-
-# Security Context para OpenShift
-securityContext:
-  runAsNonRoot: true
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
-
-# Secret configuration
-secret:
-  create: true
-  name: postgres-secret
-  data:
-    username: postgres
-    password: postgres
-    database: microservicio
+# values.yaml
+global:
+  postgresql:
+    auth:
+      postgresPassword: "postgres"
+      username: "postgres"
+      password: "postgres"
+      database: "microservicio"
+ 
+primary:
+  persistence:
+    enabled: true
+    size: 8Gi
