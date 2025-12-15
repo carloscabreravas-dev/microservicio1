@@ -8,7 +8,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-DB_HOST = os.getenv('DB_HOST', 'my-postgres-postgresql.carloscabreravas-dev.svc.cluster.local')
+DB_HOST = os.getenv('DB_HOST', 'my-postgres-postgresql')
 DB_PORT = os.getenv('DB_PORT', '5432')
 DB_NAME = os.getenv('DB_NAME', 'microservicio')
 DB_USER = os.getenv('DB_USER', 'postgres')
